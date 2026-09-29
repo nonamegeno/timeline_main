@@ -28,12 +28,15 @@
 <style>
   #eftTimeline, #eftTimeline * { box-sizing: border-box; }
   .eft-timeline{
-    --paper:#F1E9D8; --ink:#2B2113; --rule:#B7A585;
-    --rule-major:#8C7A5C; --accent:#A4472B; --accent-soft:#D9C7A8;
-    max-width:900px; margin:0 auto; padding:28px 16px 20px;
-    background:var(--paper); color:var(--ink);
-    font-family:'Karla',system-ui,sans-serif;
-    border-radius:2px;
+  --paper:#F1E9D8; --ink:#2B2113; --rule:#B7A585;
+  --rule-major:#8C7A5C; --accent:#A4472B; --accent-soft:#D9C7A8;
+  max-width:100%;          /* было 900px */
+  width:100%;
+  margin:0 auto;
+  padding:28px 0 20px;     /* боковые отступы можно убрать */
+  background:var(--paper); color:var(--ink);
+  font-family:'Karla',system-ui,sans-serif;
+  border-radius:2px;
   }
   .eft-year{
     font-family:'Spectral',Georgia,serif; font-weight:600;
