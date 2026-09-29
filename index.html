@@ -5,7 +5,7 @@
   ничего больше подключать не нужно.
 
   Чтобы заменить события — отредактируйте массив EVENTS ниже:
-  { year: 1861, title: "Заголовок", text: "Текст-пояснение." }
+  { year: 1861, title: "Заголовок", text: "Текст-пояснение.", ruler: "Правитель" }
 ============================================================= -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600&family=Karla:wght@400;500&display=swap" rel="stylesheet">
@@ -22,21 +22,21 @@
 
   <div class="eft-caret" aria-hidden="true"></div>
   <p class="eft-desc" id="eftDesc"></p>
-  <div class="eft-hint">← для просмотра событий потяните ленту в сторону или прокрутите её колесом мыши →</div>
+  <div class="eft-hint">← тяните ленту, крутите колесо, или ←/→ →</div>
 </div>
 
 <style>
   #eftTimeline, #eftTimeline * { box-sizing: border-box; }
   .eft-timeline{
-  --paper:#F1E9D8; --ink:#2B2113; --rule:#B7A585;
-  --rule-major:#8C7A5C; --accent:#A4472B; --accent-soft:#D9C7A8;
-  max-width:100%;          /* было 900px */
-  width:100%;
-  margin:0 auto;
-  padding:28px 0 20px;     /* боковые отступы можно убрать */
-  background:var(--paper); color:var(--ink);
-  font-family:'Karla',system-ui,sans-serif;
-  border-radius:2px;
+    --paper:#F1E9D8; --ink:#2B2113; --rule:#B7A585;
+    --rule-major:#8C7A5C; --accent:#A4472B; --accent-soft:#D9C7A8;
+    max-width:100%;
+    width:100%;
+    margin:0 auto;
+    padding:28px 0 20px;
+    background:var(--paper); color:var(--ink);
+    font-family:'Karla',system-ui,sans-serif;
+    border-radius:2px;
   }
   .eft-year{
     font-family:'Spectral',Georgia,serif; font-weight:600;
@@ -46,7 +46,9 @@
   }
   .eft-ruler{
     text-align:center; font-size:.85rem; font-style:italic; color:var(--rule-major);
-    margin:2px 0 16px; min-height:1.3em; transition:opacity .18s ease;
+    margin:2px 0 16px;
+    min-height:0;
+    transition:opacity .18s ease;
   }
   .eft-viewport{
     position:relative; overflow-x:auto; overflow-y:hidden;
@@ -100,7 +102,8 @@
   }
   .eft-desc{
     max-width:60ch; margin:12px auto 0; text-align:center;
-    font-size:1rem; line-height:1.55; min-height:3.3em;
+    font-size:1rem; line-height:1.55;
+    min-height:0;
     transition:opacity .18s ease;
   }
   .eft-desc a{
@@ -123,7 +126,7 @@
   // внутри текста можно писать свободно, ничего не сломается.
   // Внутри text можно использовать HTML, например ссылки:
   // <a href="https://elfimovo.ru/..." target="_blank" rel="noopener">текст ссылки</a>
-  var EVENTS = [
+var EVENTS = [
         { year: 1620, title: `Начало истории`, text: `Территория, на которой сегодня стоит Елфимово, ещё пустует: на месте будущего села шумят дремучие леса. Местная мордва из близлежащих селений Уда и Старое Маресьево занимается здесь бортничеством — добычей меда лесных пчёл`, ruler: `Царствует: Михаил Фёдорович Романов` },
     { year: 1644, title: `Появление вотчины`, text: `Маресева пустошь продана со всеми угодьями и бортными ухожаями боярину Якову Куденетовичу Черкасскому, который основывает здесь село Знаменское.`, ruler: `Царствует: Михаил Фёдорович Романов` },
     { year: 1646, title: `Первая перепись`, text: `В 1646 году Маресьевская вотчина князей Черкасских впервые <a href="https://disk.yandex.ru/d/wVgA0g4ob35wAA">попадает в переписные книги</a>: будных майданов в вотчине на тот момент ещё не было.`, ruler: `Царствует: Михаил Фёдорович Романов` },
@@ -175,7 +178,8 @@
     { year: 2001, title: `Открытие нового здания Елфимовской средней школы`, text: `Вместо обветшавшего деревянного здания 16 декабря 2000 года открывается новое кирпичное здание.`, ruler: `Страной руководит: В.В.Путин` }
   ];
 
-  var PX_PER_YEAR = 9;
+
+var PX_PER_YEAR = 9;
 
   function escapeHtml(s){
     return String(s).replace(/[&<>]/g, function(c){
@@ -244,18 +248,54 @@
     viewport.setAttribute('aria-valuemax', EVENTS.length - 1);
   }
 
+  // Фиксируем высоту под самую длинную веху, чтобы блок не «прыгал»
+  // при прокрутке таймлайна (у событий тексты разной длины).
+  function reserveHeights(){
+    // сбрасываем прежние значения, чтобы измерять «чистую» высоту
+    descEl.style.minHeight = '0';
+    rulerEl.style.minHeight = '0';
+
+    // — измеряем .eft-desc через отдельную «линейку» вне потока —
+    var probe = document.createElement('div');
+    probe.className = 'eft-desc';
+    probe.style.cssText =
+      'position:absolute;visibility:hidden;pointer-events:none;' +
+      'left:-99999px;top:0;box-sizing:border-box;min-height:0;';
+    probe.style.width = descEl.clientWidth + 'px';
+    document.body.appendChild(probe);
+
+    var maxDesc = 0;
+    EVENTS.forEach(function(ev){
+      probe.innerHTML = escapeHtml(ev.title) + '. ' + ev.text;
+      if (probe.offsetHeight > maxDesc) maxDesc = probe.offsetHeight;
+    });
+    document.body.removeChild(probe);
+
+    descEl.style.minHeight = maxDesc + 'px';
+
+    // — измеряем .eft-ruler прямо на элементе (синхронно, мигания нет) —
+    var maxRuler = 0;
+    var savedRuler = rulerEl.textContent;
+    EVENTS.forEach(function(ev){
+      rulerEl.textContent = ev.ruler || '';
+      if (rulerEl.offsetHeight > maxRuler) maxRuler = rulerEl.offsetHeight;
+    });
+    rulerEl.textContent = savedRuler;
+    rulerEl.style.minHeight = maxRuler + 'px';
+  }
+
   var current = -1;
   function render(i){
     if (i === current) return;
     current = i;
     var ev = EVENTS[i];
     yearEl.style.opacity = 0; descEl.style.opacity = 0; rulerEl.style.opacity = 0;
-    setTimeout(function(){
+    requestAnimationFrame(function(){
       yearEl.textContent = ev.year;
       descEl.innerHTML = escapeHtml(ev.title) + '. ' + ev.text;
       rulerEl.textContent = ev.ruler || '';
       yearEl.style.opacity = 1; descEl.style.opacity = 1; rulerEl.style.opacity = 1;
-    }, 90);
+    });
     var btns = canvas.querySelectorAll('.eft-event');
     btns.forEach(function(b, idx){ b.classList.toggle('active', idx === i); });
     viewport.setAttribute('aria-valuenow', i);
@@ -318,10 +358,12 @@
   window.addEventListener('resize', function(){
     var i = current;
     layout();
+    reserveHeights();
     goTo(i, false);
   });
 
   layout();
+  reserveHeights();
   goTo(0, false);
 })();
 </script>
