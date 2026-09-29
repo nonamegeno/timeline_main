@@ -294,6 +294,10 @@ var PX_PER_YEAR = 9;
       yearEl.textContent = ev.year;
       descEl.innerHTML = escapeHtml(ev.title) + '. ' + ev.text;
       rulerEl.textContent = ev.ruler || '';
+      descEl.querySelectorAll('a').forEach(function(a){
+        a.setAttribute('target', '_blank');
+        a.setAttribute('rel', 'noopener noreferrer');
+      });
       yearEl.style.opacity = 1; descEl.style.opacity = 1; rulerEl.style.opacity = 1;
     });
     var btns = canvas.querySelectorAll('.eft-event');
